@@ -1,0 +1,17 @@
+// Phishing1 - Hill Climbing
+digraph {
+	SFH -> Result
+	SFH -> Request_URL
+	SFH -> URL_of_Anchor
+	SFH -> SSLfinal_State
+	SSLfinal_State -> popUpWidnow
+	SSLfinal_State -> having_IP_Address
+	Request_URL -> Result
+	URL_of_Anchor -> Request_URL
+	age_of_domain -> web_traffic
+	having_IP_Address -> URL_Length
+	Result -> popUpWidnow
+	Result -> SSLfinal_State
+	Result -> age_of_domain
+	Result -> URL_Length
+}
