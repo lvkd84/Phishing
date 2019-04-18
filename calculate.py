@@ -5,39 +5,58 @@
 # needs to potentially take into account effect mods, etc.
 #import pandas as pd
 import numpy as np
+import itertools
 
 #load_data1 = arff.loadarff('Phishing.arff')
 #df1 = pd.DataFrame(load_data[0]).astype(int)
 
-def riskDifference(data, indexOfA, indexOfY):
-    countWhenA = [0, 1] # count in the array when A = value and Y = 1
-    countWhenY = [1]
-    counts, totals = count(data, indexOfA, indexOfY, countWhenA, countWhenY)
-    return counts[1][0]/totals[1] - counts[0][0]/totals[0]
+def riskDifference(data, indexOfA, indexOfY, indexOfL=[]):
+    AValues = [0, 1] # count in the array when A = value and Y = 1
+    YValues = [1]
+    LValues = [ [0,1] for _ in range(len(indexOfL))]
+    ALCombos = [_ for l in range(len(indexOfL)+2) for _ in itertools.combinations([indexOfL,'a'], l)] 
+    counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, ALCombos, LValues, indexOfL)
+    #return counts[1][0]/totals[1] - counts[0][0]/totals[0]
 
-def riskRatio(data, indexOfA, indexOfY):
-    countWhenA = [0,1]
-    countWhenY = [1]
-    counts, totals = count(data, indexOfA, indexOfY, countWhenA, countWhenY)
-    return (counts[1][0]/totals[1])/(counts[0][0]/totals[0])
+def riskRatio(data, indexOfA, indexOfY, indexOfL=[]):
+    AValues = [0,1]
+    YValues = [1]
+    LValues = [ [0,1] for _ in range(len(indexOfL))]
+    ALCombos = [_ for l in range(len(indexOfL)+2) for _ in itertools.combinations([indexOfL,'a'], l)] 
+    counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, ALCombos, LValues, indexOfL)
+    #return (counts[1][0]/totals[1])/(counts[0][0]/totals[0])
 
-def oddsRatio(data, indexOfA, indexOfY):
-    countWhenA = [0,1]
-    countWhenY = [0,1]
-    counts, totals = count(data, indexOfA, indexOfY, countWhenA, countWhenY)
-    return (counts[1][1]/totals[1]/(counts[1][0]/totals[1])/(counts[0][1]/totals[0]/(counts[0][0]/totals[0])))
+def oddsRatio(data, indexOfA, indexOfY, indexOfL=[]):
+    AValues = [0,1]
+    YValues = [0,1]
+    LValues = [[0,1] for _ in range(len(indexOfL))]
+    ALCombos = [_ for l in range(len(indexOfL)+2) for _ in itertools.combinations([indexOfL,'a'], l)] 
+    counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, ALCombos, LValues, indexOfL)
+    #return (counts[1][1]/totals[1]/(counts[1][0]/totals[1])/(counts[0][1]/totals[0]/(counts[0][0]/totals[0])))
 
-def count(data, indexOfA, indexOfY, countWhenA, countWhenY):
-    counts = np.zeros((len(countWhenA), len(countWhenY)))
-    totals = np.zeros(len(countWhenA))
+def count(data, indexOfA, indexOfY, AValues, YValues, ALCombos, LValues=[], indexOfL=[]):
+    #TODO: give counts and totals more descriptive names
+    totals = np.zeros_like(ALCombos)
+    ycounts = np.zeros_like([ALCombos for _ in range(len(YValues))])
     for i in range(len(data[0])):
-        for j in range(len(countWhenA)):
-            if (data[indexOfA][i] == countWhenA[j]):
-                totals[j] += 1
-                for k in range(len(countWhenY)):
-                    if (data[indexOfY][i] == countWhenY[k]):
-                        counts[j][k] += 1
-    return counts, totals
+        for j in range(len(ALCombos)):
+            correctCov = True
+            for l in indexOfL:
+                if l in ALCombos[j]:
+                    correctCov = data[l][i] == 1
+                else:
+                    correctCov = data[l][i] == 0
+            if 'a' in ALCombos[j]:
+                correctCov = data[indexOfA][i] == 1
+            else:
+                correctCov = data[indexOfA][i] == 0
+            for k in YValues:
+                yCorrect = data[indexOfY][i] == k
+                if correctCov:
+                    totals[j] += 1
+                    if yCorrect:
+                        ycounts[k][j] += 1
+    return ycounts, totals
 
 if __name__ == '__main__':
     data = np.array([[0,0,0,0,1,1,1], [0,1,1,1,0,1,1]])
