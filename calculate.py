@@ -235,7 +235,10 @@ def count(data, indexOfA, indexOfY, aValues, yValues, lValues=[], indexOfL=[]):
         if len(indexOfL)==0:
             pass
         else:
-            lcounts = np.zeros(np.prod(np.array(indexOfL)))
+            total_lValues = []
+            for values in lValues:
+                total_lValues.append(len(values))
+            lcounts = np.zeros(np.prod(np.array(total_lValues)))
             aycounts = np.zeros_like([[lcounts for _ in yValues] for _ in aValues])
             for a in range(len(aValues)):
                 for y in range(len(yValues)):
