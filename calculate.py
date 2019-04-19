@@ -11,7 +11,7 @@ import itertools
 #df1 = pd.DataFrame(load_data[0]).astype(int)
 
 
-def condProb(aValueIndex, yValueIndex, aycounts, ltotals):
+def cond_prob(aValueIndex, yValueIndex, aycounts, ltotals):
     '''
     Calculates the P(Y=y|A=a) when P(Y=y|A=a, L_i=l_i, ..., L_n=l_n)
 
@@ -45,7 +45,7 @@ def condProb(aValueIndex, yValueIndex, aycounts, ltotals):
     return probability
 
 
-def riskDifference(data, indexOfA, indexOfY, indexOfL=[]):
+def risk_difference(data, indexOfA, indexOfY, indexOfL=[], LCombos=[]):
     '''
     Calculates the associational risk difference for the cause A, the effect Y, and the conditions L
 
@@ -64,6 +64,9 @@ def riskDifference(data, indexOfA, indexOfY, indexOfL=[]):
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
 
+    LCombos : int array
+        contains all combinations of the indices of L. Optional.
+
     Returns
     -------
     float
@@ -71,12 +74,11 @@ def riskDifference(data, indexOfA, indexOfY, indexOfL=[]):
     '''
     AValues = [0, 1] # count in the array when A = value and Y = 1
     YValues = [1]
-    LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)] 
     counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL)
-    return condProb(1, 0, counts, totals) - condProb(0, 0, counts, totals)
+    return cond_prob(1, 0, counts, totals) - cond_prob(0, 0, counts, totals)
 
 
-def riskRatio(data, indexOfA, indexOfY, indexOfL=[]):
+def risk_ratio(data, indexOfA, indexOfY, indexOfL=[], LCombos=[]):
     '''
     Calculates the associational risk ratio for the cause A, the effect Y, and the conditions L
 
@@ -95,6 +97,9 @@ def riskRatio(data, indexOfA, indexOfY, indexOfL=[]):
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
 
+    LCombos : int array
+        contains all combinations of the indices of L. Optional
+
     Returns
     -------
     float
@@ -102,11 +107,10 @@ def riskRatio(data, indexOfA, indexOfY, indexOfL=[]):
     '''
     AValues = [0,1]
     YValues = [1]
-    LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)] 
     counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL)
-    return condProb(1, 0, counts, totals) / condProb(0, 0, counts, totals)
+    return cond_prob(1, 0, counts, totals) / cond_prob(0, 0, counts, totals)
 
-def oddsRatio(data, indexOfA, indexOfY, indexOfL=[]):
+def odds_ratio(data, indexOfA, indexOfY, indexOfL=[], LCombos=[]):
     '''
     Calculates the associational odds ratio for the cause A, the effect Y, and the conditions L
 
@@ -124,6 +128,9 @@ def oddsRatio(data, indexOfA, indexOfY, indexOfL=[]):
 
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
+    
+    LCombos : int array
+        contains all combinations of the indices of L. Optional.
 
     Returns
     -------
@@ -132,13 +139,11 @@ def oddsRatio(data, indexOfA, indexOfY, indexOfL=[]):
     '''
     AValues = [0,1]
     YValues = [0,1]
-    LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)]
-    # contains all combinations of the indices of A and L's
     counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL)
-    return condProb(1, 1, counts, totals)/condProb(1, 0, counts, totals) / (condProb(0, 1, counts, totals)/condProb(0, 0, counts, totals))
+    return cond_prob(1, 1, counts, totals)/cond_prob(1, 0, counts, totals) / (cond_prob(0, 1, counts, totals)/cond_prob(0, 0, counts, totals))
 
 
-def count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL=[]):
+def count(data, indexOfA, indexOfY, AValues, YValues, LCombos=[], indexOfL=[]):
     '''
     Counts a combination of all L for when a = AValues and y = YValues. 
     Values of A, Y, and L must be discrete. A and Y can be nonbinary, though L's must be binary.
@@ -147,27 +152,36 @@ def count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL=[]):
     ----------
     data : int array
         the data to count over
+
     indexOfA : int
         the index of A in the data
+
     indexOfY : int
         the index of Y in the data
+
     AValues : int array
         the values of A to count for
+
     YValues : int array
         the values of Y to count for
+
     LCombos : int array
-        permutations of all indices of L
+        contains all combinations of the indices of L
+        
     indexOfL : int
         the indices of L in the data
+
 
     Returns
     -------
     int array
-        the counts over the permutations of L for when A=AValues and Y=YValues
+        the counts over the combinations of L for when A=AValues and Y=YValues
     int array
-        the counts over the permutations of L
+        the counts over the combinations of L
     '''
     #TODO: give counts and totals more descriptive names
+    if len(LCombos)==0:
+        LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)]
     totals = np.zeros_like(LCombos) # totals[j] holds the total number of items that only contain the items in LCombos[j]
     aycounts = np.zeros_like([[LCombos for _ in YValues] for _ in AValues]) # same but for each of Y=YValues[k]
     for i in range(len(data[0])): # for all elements in the data
@@ -189,3 +203,28 @@ def count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL=[]):
                             aycounts[a][y][j] += 1
     return aycounts, totals
 
+def calulate_ass_efects(data, indexOfA, indexOfY, AValues, YValues, indexOfL=[]):
+    '''
+    Words
+
+    Parameters
+    ----------
+    data : int array
+        the data to count over
+
+    indexOfA : int
+        the index of A in the data
+
+    indexOfY : int
+        the index of Y in the data
+
+    AValues : int array
+        the values of A to count for
+
+    YValues : int array
+        the values of Y to count for
+        
+    indexOfL : int
+        the indices of L in the data
+    '''
+    pass
