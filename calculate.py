@@ -10,19 +10,31 @@ import itertools
 #load_data1 = arff.loadarff('Phishing.arff')
 #df1 = pd.DataFrame(load_data[0]).astype(int)
 
-'''
-Calculates the P(Y=y|A=a) when P(Y=y|A=a, L_i=l_i, ..., L_n=l_n)
-P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
-           = \sum_L P(Y=y,A=a,L=l,...,L=l)*P(L=l,...,L=l)/P(A=a,L=l,...,L=l)
-                    aycounts[a][y][i]      totals[i]      aycounts[a][sum over y][i]
-@param aValueIndex  the index of aycounts where a = value you're looking for
-@param yValueIndex  the index of aycounts[a] where y = value you're looking for
-@param aycounts     it's complicated but each value [a][y][i] is where you're on the ith combo of L
-                    and it's the sum of where [a][y] are their values
-@param ltotals      same as aycounts but no a and y
-@returns            P(Y=y|A=a)
-'''
+
 def condProb(aValueIndex, yValueIndex, aycounts, ltotals):
+    '''
+    Calculates the P(Y=y|A=a) when P(Y=y|A=a, L_i=l_i, ..., L_n=l_n)
+
+    Parameters
+    ----------
+    P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
+            = \sum_L P(Y=y,A=a,L=l,...,L=l)*P(L=l,...,L=l)/P(A=a,L=l,...,L=l)
+                        aycounts[a][y][i]      totals[i]      aycounts[a][sum over y][i]
+    aValueIndex : int
+        the index of aycounts where a = value you're looking for
+    yValueIndex : int
+        the index of aycounts[a] where y = value you're looking for
+    aycounts : int array
+        it's complicated but each value [a][y][i] is where you're on the ith combo of L
+        and it's the sum of where [a][y] are their values
+    ltotals : int array
+        same as aycounts but no a and y
+    
+    Returns
+    -------
+    float
+        P(Y=y|A=a)
+    '''
     # TODO: make sure this works when there are no l to sum over
     probability = 0
     for l in range(len(ltotals)):
@@ -32,54 +44,92 @@ def condProb(aValueIndex, yValueIndex, aycounts, ltotals):
         probability += aycounts[aValueIndex][yValueIndex][l] * ltotals[i] / alSum
     return probability
 
-'''
-Calculates the associational risk difference for the cause A, the effect Y, and the conditions L
-@param data     the data to calculate the risk difference on. Each data[i] holds all the values of a
-                    variable, with data[i][j] referring to element j's value for variable i.
-@param indexOfA the index of the cause's values in the data. data[indexOfA][j] represents element
-                    j's value of A.
-@param indexOfY the index of the effect's values in the data. data[indexOfY][j] represents element
-                    j's value of Y.
-@param indexOfL an array holding the indices of different L's values in the data. Optional.
-@returns        the risk difference for A on Y given conditions L
-'''
+
 def riskDifference(data, indexOfA, indexOfY, indexOfL=[]):
+    '''
+    Calculates the associational risk difference for the cause A, the effect Y, and the conditions L
+
+    Parameters
+    ----------
+    data : int array
+        the data to calculate the risk difference on. Each data[i] holds all the values of a
+        variable, with data[i][j] referring to element j's value for variable i.
+
+    indexOfA : int
+        the index of the cause's values in the data. data[indexOfA][j] represents element j's value of A.
+
+    indexOfY : int
+        the index of the effect's values in the data. data[indexOfY][j] represents element j's value of Y.
+    
+    indexOfL : int 
+        an array holding the indices of different L's values in the data. Optional.
+
+    Returns
+    -------
+    float
+        the risk difference for A on Y given conditions L
+    '''
     AValues = [0, 1] # count in the array when A = value and Y = 1
     YValues = [1]
     LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)] 
     counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL)
     return condProb(1, 0, counts, totals) - condProb(0, 0, counts, totals)
 
-'''
-Calculates the associational risk ratio for the cause A, the effect Y, and the conditions L
-@param data     the data to calculate the risk ratio on. Each data[i] holds all the values of a
-                    variable, with data[i][j] referring to element j's value for variable i.
-@param indexOfA the index of the cause's values in the data. data[indexOfA][j] represents element
-                    j's value of A.
-@param indexOfY the index of the effect's values in the data. data[indexOfY][j] represents element
-                    j's value of Y.
-@param indexOfL an array holding the indices of different L's values in the data. Optional.
-@returns        the risk ratio for A on Y given conditions L
-'''
+
 def riskRatio(data, indexOfA, indexOfY, indexOfL=[]):
+    '''
+    Calculates the associational risk ratio for the cause A, the effect Y, and the conditions L
+
+    Parameters
+    ----------
+    data : int array
+        the data to calculate the risk ratio on. Each data[i] holds all the values of a
+        variable, with data[i][j] referring to element j's value for variable i.
+
+    indexOfA : int
+        the index of the cause's values in the data. data[indexOfA][j] represents element j's value of A.
+
+    indexOfY : int
+        the index of the effect's values in the data. data[indexOfY][j] represents element j's value of Y.
+
+    indexOfL : int 
+        an array holding the indices of different L's values in the data. Optional.
+
+    Returns
+    -------
+    float
+        the risk ratio for A on Y given conditions L
+    '''
     AValues = [0,1]
     YValues = [1]
     LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)] 
     counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL)
     return condProb(1, 0, counts, totals) / condProb(0, 0, counts, totals)
 
-'''
-Calculates the associational odds ratio for the cause A, the effect Y, and the conditions L
-@param data     the data to calculate the odds ratio on. Each data[i] holds all the values of a
-                    variable, with data[i][j] referring to element j's value for variable i.
-@param indexOfA the index of the cause's values in the data. data[indexOfA][j] represents element
-                    j's value of A.
-@param indexOfY the index of the effect's values in the data. data[indexOfY][j] represents element
-                    j's value of Y.
-@param indexOfL an array holding the indices of different L's values in the data. Optional.
-@returns        the odds ratio for A on Y given conditions L
-'''
 def oddsRatio(data, indexOfA, indexOfY, indexOfL=[]):
+    '''
+    Calculates the associational odds ratio for the cause A, the effect Y, and the conditions L
+
+    Parameters
+    ----------
+    data : int array
+        the data to calculate the odds ratio on. Each data[i] holds all the values of a
+        variable, with data[i][j] referring to element j's value for variable i.
+
+    indexOfA : int
+        the index of the cause's values in the data. data[indexOfA][j] represents element j's value of A.
+
+    indexOfY : int
+        the index of the effect's values in the data. data[indexOfY][j] represents element j's value of Y.
+
+    indexOfL : int 
+        an array holding the indices of different L's values in the data. Optional.
+
+    Returns
+    -------
+    float
+        the odds ratio for A on Y given conditions L
+    '''
     AValues = [0,1]
     YValues = [0,1]
     LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)]
@@ -87,20 +137,36 @@ def oddsRatio(data, indexOfA, indexOfY, indexOfL=[]):
     counts, totals = count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL)
     return condProb(1, 1, counts, totals)/condProb(1, 0, counts, totals) / (condProb(0, 1, counts, totals)/condProb(0, 0, counts, totals))
 
-'''
-Counts a combination of all L for when a = AValues and y = YValues. 
-Values of A, Y, and L must be discrete. A and Y can be nonbinary, though L's must be binary.
-@param data         the data to count over
-@param indexOfA     the index of A in the data
-@param indexOfY     the index of Y in the data
-@param AValues      the values of A to count for
-@param YValues      the values of Y to count for
-@param LCombos      permutations of all indices of L
-@param indexOfL     the indices of L in the data
-@return aycounts    the counts over the permutations of L for when A=AValues and Y=YValues
-@return totals      the counts over the permutations of L
-'''
+
 def count(data, indexOfA, indexOfY, AValues, YValues, LCombos, indexOfL=[]):
+    '''
+    Counts a combination of all L for when a = AValues and y = YValues. 
+    Values of A, Y, and L must be discrete. A and Y can be nonbinary, though L's must be binary.
+
+    Parameters
+    ----------
+    data : int array
+        the data to count over
+    indexOfA : int
+        the index of A in the data
+    indexOfY : int
+        the index of Y in the data
+    AValues : int array
+        the values of A to count for
+    YValues : int array
+        the values of Y to count for
+    LCombos : int array
+        permutations of all indices of L
+    indexOfL : int
+        the indices of L in the data
+
+    Returns
+    -------
+    int array
+        the counts over the permutations of L for when A=AValues and Y=YValues
+    int array
+        the counts over the permutations of L
+    '''
     #TODO: give counts and totals more descriptive names
     totals = np.zeros_like(LCombos) # totals[j] holds the total number of items that only contain the items in LCombos[j]
     aycounts = np.zeros_like([[LCombos for _ in YValues] for _ in AValues]) # same but for each of Y=YValues[k]
