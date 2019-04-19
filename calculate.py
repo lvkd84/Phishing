@@ -273,11 +273,10 @@ def calculate_ass_effects(data, indexOfA, indexOfY, aValues = [], yValues = [], 
         yValues = [0,1]
     LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)]
     aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos)
-    print("Risk difference")
+    
     r_difference = risk_difference(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, LCombos, aycounts, lcounts)
-    print(r_difference)
-    print("Risk ratio")
     r_ratio = risk_ratio(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, LCombos, aycounts, lcounts)
-    print(r_ratio)
-    print("Odds ratio")
     o_ratio = odds_ratio(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos, aycounts, lcounts)
+    print("Risk difference:", r_difference)
+    print("Risk ratio:", r_ratio)
+    print("Odds ratio:", o_ratio)
