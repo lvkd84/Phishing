@@ -36,11 +36,11 @@ def cond_prob(aValueIndex, yValueIndex, aycounts, lcounts):
         alSum = 0
         for y in aycounts[aValueIndex]:
             alSum += aycounts[aValueIndex][y][l]
-        probability += aycounts[aValueIndex][yValueIndex][l] * lcounts[i] / alSum
+        probability += aycounts[aValueIndex][yValueIndex][l] * lcounts[l] / alSum
     return probability
 
 
-def risk_difference(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[], LCombos=[], aycounts = [], lcounts = []):
+def risk_difference(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[], aycounts = [], lcounts = []):
     '''
     Calculates the associational risk difference for the cause A, the effect Y, and the conditions L
 
@@ -65,8 +65,8 @@ def risk_difference(data, indexOfA, indexOfY, aValues = [], yValues = [], indexO
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
 
-    LCombos : int array
-        contains all combinations of the indices of L. Optional.
+    lValues : int array
+        the values of L to count for
 
     aycounts : int array
         each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
@@ -84,11 +84,11 @@ def risk_difference(data, indexOfA, indexOfY, aValues = [], yValues = [], indexO
     if len(yValues)==0:
         yValues = [1]
     if (len(aycounts)==0):
-        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos)
+        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
     return cond_prob(1, 0, aycounts, lcounts) - cond_prob(0, 0, aycounts, lcounts)
 
 
-def risk_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[], LCombos=[], aycounts = [], lcounts = []):
+def risk_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[], aycounts = [], lcounts = []):
     '''
     Calculates the associational risk ratio for the cause A, the effect Y, and the conditions L
 
@@ -113,8 +113,8 @@ def risk_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[]
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
 
-    LCombos : int array
-        contains all combinations of the indices of L. Optional
+    lValues : int array
+        the values of L to count for
 
     aycounts : int array
         each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
@@ -132,10 +132,10 @@ def risk_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[]
     if len(yValues)==0:
         yValues = [1]
     if (len(aycounts)==0):
-        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos)
+        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
     return cond_prob(1, 0, aycounts, lcounts) / cond_prob(0, 0, aycounts, lcounts)
 
-def odds_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[], LCombos=[], aycounts = [], lcounts = []):
+def odds_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[], aycounts = [], lcounts = []):
     '''
     Calculates the associational odds ratio for the cause A, the effect Y, and the conditions L
 
@@ -160,8 +160,8 @@ def odds_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[]
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
     
-    LCombos : int array
-        contains all combinations of the indices of L. Optional.
+    lValues : int array
+        the values of L to count for
 
     aycounts : int array
         each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
@@ -179,11 +179,18 @@ def odds_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[]
     if len(yValues)==0:
         yValues = [0, 1]
     if (len(aycounts)==0):
-        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos)
+        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
     return cond_prob(1, 1, aycounts, lcounts)/cond_prob(1, 0, aycounts, lcounts) / (cond_prob(0, 1, aycounts, lcounts)/cond_prob(0, 0, aycounts, lcounts))
 
 
-def count(data, indexOfA, indexOfY, aValues, yValues, indexOfL=[], LCombos=[]):
+def update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y):
+    if correctCov:
+        lcounts[lcounts_index] += 1
+        if ayCorrect:
+            aycounts[a][y][lcounts_index] += 1
+    return lcounts, aycounts
+
+def count(data, indexOfA, indexOfY, aValues, yValues, lValues=[], indexOfL=[]):
     '''
     Counts a combination of all L for when a = aValues and y = yValues. 
     Values of A, Y, and L must be discrete. A and Y can be nonbinary, though L's must be binary.
@@ -205,11 +212,11 @@ def count(data, indexOfA, indexOfY, aValues, yValues, indexOfL=[], LCombos=[]):
     yValues : int array
         the values of Y to count for
         
-    indexOfL : int
-        the indices of L in the data
+    lValues : int array
+        the values of L to count for
 
-    LCombos : int array
-        contains all combinations of the indices of L
+    lValues : int array
+        the values of L to count for
 
 
     Returns
@@ -219,31 +226,46 @@ def count(data, indexOfA, indexOfY, aValues, yValues, indexOfL=[], LCombos=[]):
     int array
         the counts over the combinations of L
     '''
-    #TODO: give counts and lcounts more descriptive names
-    if len(LCombos)==0:
-        LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)]
-    lcounts = np.zeros_like(LCombos) # lcounts[j] holds the total number of items that only contain the items in LCombos[j]
-    aycounts = np.zeros_like([[LCombos for _ in yValues] for _ in aValues]) # same but for each of Y=yValues[k]
+    assert(len(indexOfL <= 3))
+
+    lcounts = []
+    aycounts = []
     for i in range(len(data[0])): # for all elements in the data
-        for j in range(len(LCombos)): # for all combos of A and L
-            correctCov = True # start off with correctCov as true
-            for l in indexOfL: # check that all the L's that LCombs call for are present
-                if l in LCombos[j]:
-                    correctCov = (data[l][i] == 1) and correctCov
-                else:
-                    correctCov = (data[l][i] == 0) and correctCov
-                if (not(correctCov)):
-                    break
+
+        if len(indexOfL)==0:
+            pass
+        else:
+            lcounts = np.zeros(np.prod(np.array(indexOfL)))
+            np.zeros_like([[lcounts for _ in yValues] for _ in aValues])
             for a in range(len(aValues)):
                 for y in range(len(yValues)):
                     ayCorrect = (data[indexOfA][i] == aValues[a]) and (data[indexOfY][i] == yValues[y])
-                    if correctCov:
-                        lcounts[j] += 1
-                        if ayCorrect:
-                            aycounts[a][y][j] += 1
+                    correctCov = True
+                    lcounts_index = 0
+                    if len(indexOfL)>=1:
+                        for j in range(len(lValues[0])):
+                            correctCov = (data[indexOfL[0]][i] == lValues[0][j])
+                            lcounts_index += j
+                            if len(indexOfL)>=2:
+                                for k in range(len(lValues[1])):
+                                    correctCov = (data[indexOfL[1]][i] == lValues[1][k]) and correctCov
+                                    lcounts_index += k
+                                    if len(indexOfL)==3:
+                                        for q in range(len(lValues[2])):
+                                            correctCov = (data[indexOfL[2]][i] == lValues[2][q]) and correctCov
+                                            lcounts_index += q
+                                            update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
+                                    else:
+                                        update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
+                            else:
+                                update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
+                    else:
+                        #should never happen
+                        update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
+    
     return aycounts, lcounts
 
-def calculate_ass_effects(data, indexOfA, indexOfY, aValues = [], yValues = [], indexOfL=[]):
+def calculate_ass_effects(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[]):
     '''
     Words
 
@@ -271,12 +293,11 @@ def calculate_ass_effects(data, indexOfA, indexOfY, aValues = [], yValues = [], 
         aValues = [0,1]
     if len(yValues)==0:
         yValues = [0,1]
-    LCombos = [_ for l in range(len(indexOfL)+1) for _ in itertools.combinations([indexOfL], l)]
-    aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos)
+    aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
     
-    r_difference = risk_difference(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, LCombos, aycounts, lcounts)
-    r_ratio = risk_ratio(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, LCombos, aycounts, lcounts)
-    o_ratio = odds_ratio(data, indexOfA, indexOfY, aValues, yValues, indexOfL, LCombos, aycounts, lcounts)
+    r_difference = risk_difference(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, aycounts, lcounts)
+    r_ratio = risk_ratio(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, aycounts, lcounts)
+    o_ratio = odds_ratio(data, indexOfA, indexOfY, aValues, yValues, indexOfL, aycounts, lcounts)
     print("Risk difference:", r_difference)
     print("Risk ratio:", r_ratio)
     print("Odds ratio:", o_ratio)
