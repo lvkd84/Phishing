@@ -45,7 +45,7 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
                     lsum += aylcounts[a][y][l]
             probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / alSum
     if (probability==0):
-        raise ValueError("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)")")
+        raise ValueError("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
     return probability
 
 
