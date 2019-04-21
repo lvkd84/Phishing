@@ -5,7 +5,7 @@ import numpy as np
 #df1 = pd.DataFrame(load_data[0]).astype(int)
 
 
-def cond_prob(aValueIndex, yValueIndex, aycounts, lcounts):
+def cond_prob(aValueIndex, yValueIndex, aylcounts):
     '''
     Calculates the P(Y=y|A=a) when P(Y=y|A=a, L_i=l_i, ..., L_n=l_n)
 
@@ -13,19 +13,19 @@ def cond_prob(aValueIndex, yValueIndex, aycounts, lcounts):
     ----------
     P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
             = \sum_L P(Y=y,A=a,L=l,...,L=l)*P(L=l,...,L=l)/P(A=a,L=l,...,L=l)
-                        aycounts[a][y][i]      lcounts[i]      aycounts[a][sum over y][i]
+                        aylcounts[a][y][i]      lcounts[i]      aylcounts[a][sum over y][i]
     if no L:
                = P(Y=y,A=a) / P(A=a)
-               aycounts[a][y] aycounts[a][sum over y]
+               aylcounts[a][y] aylcounts[a][sum over y]
     aValueIndex : int
-        the index of aycounts where a = value you're looking for
+        the index of aylcounts where a = value you're looking for
     yValueIndex : int
-        the index of aycounts[a] where y = value you're looking for
-    aycounts : int array
+        the index of aylcounts[a] where y = value you're looking for
+    aylcounts : int array
         it's complicated but each value [a][y][i] is where you're on the ith combo of L
         and it's the sum of where [a][y] are their values
     lcounts : int array
-        same as aycounts but no a and y
+        same as aylcounts but no a and y
     
     Returns
     -------
@@ -33,21 +33,21 @@ def cond_prob(aValueIndex, yValueIndex, aycounts, lcounts):
         P(Y=y|A=a)
     '''
     probability = 0
-    if len(lcounts)==0:
-        #aSum = 0
-        #for y in range(len(aycounts[aValueIndex])): #sum over all possible y
-        #    aSum += aycounts[aValueIndex][y]
-        probability = aycounts[aValueIndex][yValueIndex] / np.sum(aycounts[aValueIndex])
+    if np.shape(aylcounts)==(2,2):
+        probability = aylcounts[aValueIndex][yValueIndex] / np.sum(aylcounts[aValueIndex])
     else:
-        for l in range(len(lcounts)):
+        for l in range(len(aylcounts[aValueIndex][yValueIndex])):
             alSum = 0
-            for y in range(len(aycounts[aValueIndex])):
-                alSum += aycounts[aValueIndex][y][l]
-            probability += aycounts[aValueIndex][yValueIndex][l] * lcounts[l] / alSum
+            lsum = 0
+            for y in range(len(aylcounts[aValueIndex])):
+                alSum += aylcounts[aValueIndex][y][l]
+                for a in range(2):
+                    lsum += aylcounts[a][y][l]
+            probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / alSum
     return probability
 
 
-def risk_difference(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[], aycounts = [], lcounts = []):
+def risk_difference(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
     '''
     Calculates the associational risk difference for the cause A, the effect Y, and the conditions L
 
@@ -75,27 +75,23 @@ def risk_difference(data, indexOfA, indexOfY, aValues = [], yValues = [], lValue
     lValues : int array
         the values of L to count for
 
-    aycounts : int array
+    aylcounts : int array
         each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
 
     lcounts : int array
-        same as aycounts but no a and y
+        same as aylcounts but no a and y
 
     Returns
     -------
     float
         the risk difference for A on Y given conditions L
     '''
-    if len(aValues)==0:
-        aValues = [0, 1] # count in the array when A = value and Y = 1
-    if len(yValues)==0:
-        yValues = [0, 1]
-    if len(aycounts)==0:
-        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
-    return cond_prob(1, 1, aycounts, lcounts) - cond_prob(0, 1, aycounts, lcounts)
+    if len(aylcounts)==0:
+        aylcounts = count(data, indexOfA, indexOfY, indexOfL)
+    return cond_prob(1, 1, aylcounts) - cond_prob(0, 1, aylcounts)
 
 
-def risk_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[], aycounts = [], lcounts = []):
+def risk_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL = None):
     '''
     Calculates the associational risk ratio for the cause A, the effect Y, and the conditions L
 
@@ -123,26 +119,22 @@ def risk_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[],
     lValues : int array
         the values of L to count for
 
-    aycounts : int array
+    aylcounts : int array
         each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
 
     lcounts : int array
-        same as aycounts but no a and y
+        same as aylcounts but no a and y
 
     Returns
     -------
     float
         the risk ratio for A on Y given conditions L
     '''
-    if len(aValues)==0:
-        aValues = [0, 1] # count in the array when A = value and Y = 1
-    if len(yValues)==0:
-        yValues = [0, 1]
-    if (len(aycounts)==0):
-        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
-    return cond_prob(1, 1, aycounts, lcounts) / cond_prob(0, 1, aycounts, lcounts)
+    if (len(aylcounts)==0):
+        aylcounts = count(data, indexOfA, indexOfY, indexOfL)
+    return cond_prob(1, 1, aylcounts) / cond_prob(0, 1, aylcounts)
 
-def odds_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[], aycounts = [], lcounts = []):
+def odds_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
     '''
     Calculates the associational odds ratio for the cause A, the effect Y, and the conditions L
 
@@ -170,34 +162,23 @@ def odds_ratio(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[],
     lValues : int array
         the values of L to count for
 
-    aycounts : int array
+    aylcounts : int array
         each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
 
     lcounts : int array
-        same as aycounts but no a and y
+        same as aylcounts but no a and y
 
     Returns
     -------
     float
         the odds ratio for A on Y given conditions L
     '''
-    if len(aValues)==0:
-        aValues = [0, 1]
-    if len(yValues)==0:
-        yValues = [0, 1]
-    if (len(aycounts)==0):
-        aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
-    return cond_prob(1, 1, aycounts, lcounts)/cond_prob(1, 0, aycounts, lcounts) / (cond_prob(0, 1, aycounts, lcounts)/cond_prob(0, 0, aycounts, lcounts))
+    if (len(aylcounts)==0):
+        aylcounts = count(data, indexOfA, indexOfY, indexOfL)
+    return cond_prob(1, 1, aylcounts)/cond_prob(1, 0, aylcounts) / (cond_prob(0, 1, aylcounts)/cond_prob(0, 0, aylcounts))
 
 
-def update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y):
-    if correctCov:
-        lcounts[lcounts_index] += 1
-        if ayCorrect:
-            aycounts[a][y][lcounts_index] += 1
-    return aycounts, lcounts
-
-def count(data, indexOfA, indexOfY, aValues, yValues, lValues=[], indexOfL=[]):
+def count(data, indexOfA, indexOfY, indexOfL=None):
     '''
     Counts a combination of all L for when a = aValues and y = yValues. 
 
@@ -231,53 +212,27 @@ def count(data, indexOfA, indexOfY, aValues, yValues, lValues=[], indexOfL=[]):
     int array
         the counts over the combinations of L
     '''
-    assert(len(indexOfL) <= 3)
-
-    lcounts = []
-    aycounts = []
-    if len(indexOfL)==0:
-        aycounts = np.zeros((len(aValues), len(yValues)))
+    values = [0, 1]
+    aylcounts = []
+    if indexOfL==None:
+        aylcounts = np.zeros((len(values), len(values)))
     else:
-        total_lValues = []
-        for values in lValues:
-            total_lValues.append(len(values))
-        lcounts = np.zeros(np.prod(np.array(total_lValues)))
-        aycounts = np.zeros_like([[lcounts for _ in yValues] for _ in aValues])
+        aylcounts = np.zeros((len(values), len(values), len(values)))
     for i in range(len(data[0])): # for all elements in the data
-        if len(indexOfL)==0:
-            for a in range(len(aValues)):
-                for y in range(len(yValues)):
-                    if ((data[indexOfA][i] == aValues[a]) and (data[indexOfY][i] == yValues[y])):
-                        aycounts[a][y] += 1
+        if indexOfL==None:
+            for a in range(len(values)):
+                for y in range(len(values)):
+                    if ((data[indexOfA][i] == values[a]) and (data[indexOfY][i] == values[y])):
+                        aylcounts[a][y] += 1
         else:
-            for a in range(len(aValues)):
-                for y in range(len(yValues)):
-                    ayCorrect = (data[indexOfA][i] == aValues[a]) and (data[indexOfY][i] == yValues[y])
-                    correctCov = True
-                    lcounts_index = 0
-                    if len(indexOfL)>=1:
-                        for j in range(len(lValues[0])):
-                            correctCov = (data[indexOfL[0]][i] == lValues[0][j]) and correctCov
-                            lcounts_index += j
-                            if len(indexOfL)>=2:
-                                for k in range(len(lValues[1])):
-                                    correctCov = (data[indexOfL[1]][i] == lValues[1][k]) and correctCov
-                                    lcounts_index += k
-                                    if len(indexOfL)==3:
-                                        for q in range(len(lValues[2])):
-                                            correctCov = (data[indexOfL[2]][i] == lValues[2][q]) and correctCov
-                                            lcounts_index += q
-                                            aycounts, lcounts = update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
-                                    else:
-                                        aycounts, lcounts = update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
-                            else:
-                                aycounts, lcounts = update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
-                    else:
-                        #should never happen
-                        aycounts, lcounts = update_counts(ayCorrect, correctCov, aycounts, lcounts, lcounts_index, a, y)
-    return aycounts, lcounts
+            for a in range(len(values)):
+                for y in range(len(values)):
+                    for l in range(len(values)):
+                        if ((data[indexOfA][i] == values[a]) and (data[indexOfY][i] == values[y]) and (data[indexOfL][i] == values[l])):
+                            aylcounts[a][y][l] += 1
+    return aylcounts
 
-def calculate_ass_effects(data, indexOfA, indexOfY, aValues = [], yValues = [], lValues=[], indexOfL=[]):
+def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
     '''
     Words
 
@@ -301,39 +256,34 @@ def calculate_ass_effects(data, indexOfA, indexOfY, aValues = [], yValues = [], 
     indexOfL : int
         the indices of L in the data
     '''
-    if len(aValues)==0:
-        aValues = [0,1]
-    if len(yValues)==0:
-        yValues = [0,1]
-    aycounts, lcounts = count(data, indexOfA, indexOfY, aValues, yValues, lValues, indexOfL)
+    aylcounts = count(data, indexOfA, indexOfY, indexOfL)
     
-    r_difference = risk_difference(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, aycounts, lcounts)
-    r_ratio = risk_ratio(data, indexOfA, indexOfY, aValues, [yValues[1]], indexOfL, aycounts, lcounts)
-    o_ratio = odds_ratio(data, indexOfA, indexOfY, aValues, yValues, indexOfL, aycounts, lcounts)
+    r_difference = risk_difference(data, indexOfA, indexOfY, aylcounts, indexOfL)
+    r_ratio = risk_ratio(data, indexOfA, indexOfY, aylcounts, indexOfL)
+    o_ratio = odds_ratio(data, indexOfA, indexOfY, aylcounts, indexOfL)
     print("Risk difference:", r_difference)
     print("Risk ratio:", r_ratio)
     print("Odds ratio:", o_ratio)
 
 if __name__== '__main__':
-    test_data = [[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1], [0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,], [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1]]
+    test_data = [[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1], [0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,], [0,0,0,0,0,1,1,1,0,1,0,1,0,0,0,1,1,1,1,1]]
     #A=0, Y=0 = 1
     #A=0, Y=1 = 3
     #A=1, Y=0 = 1
     #A=1, Y=1 = 2
-    aycounts, lcounts = count(test_data, 0, 1, [0, 1], [0,1], [[0,1]], [2])
+    aycounts = count(test_data, 0, 1)
     print("counts: A=0|Y=0, A=0|Y=1")
     print("counts: A=1|Y=0, A=1|Y=1")
     print(aycounts)
-    print("totals: L (empty)")
-    print(lcounts)
     print("Y=1,A=1/A=1 - Y=1,A=0/A=0")
-    '''print(risk_difference(test_data, 0, 1, [0,1], []))
-    print("a=1,y=1/a=1")
-    print("-----------")
-    print("a=0,y=1/a=0")
-    print(risk_ratio(test_data, 0, 1))
-    print("a1,y1/a1 / a1,y0/a1")
-    print("-------------------")
-    print("a0,y1/a0 / a0,y0/a0")
-    print(odds_ratio(test_data, 0, 1))'''
+
+    aylcounts = count(test_data, 0, 1, 2)
+    print("A0Y0L0, A0Y0L1")
+    print("A0Y1L0, A0Y1L1")
+    print("A1Y0L0, A1Y0L1")
+    print("A1Y1L0, A1Y1L1")
+    print(aylcounts)
+    print("put l in")
+    print(calculate_ass_effects(test_data, 0, 1))
+    print(calculate_ass_effects(test_data, 0, 1, 2))
 
