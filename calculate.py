@@ -12,8 +12,8 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
     Parameters
     ----------
     P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
-            = \sum_L P(Y=y,A=a,L=l,...,L=l)*P(L=l)/                                   P(A=a,L=l)
-                        aylcounts[a][y][l]  aylcounts[sum over a][sum over y][l]      aylcounts[a][sum over y][l]
+            = \sum_L P(Y=y,A=a,L=l)*         P(L=l)/                                                                                 P(A=a,L=l)
+                        aylcounts[a][y][l]  aylcounts[sum over a][sum over y][l]/aylcounts[sum over a][sum over y][sum over l]      aylcounts[a][sum over y][l]
     if no L:
                = P(Y=y,A=a) /   P(A=a)
                aylcounts[a][y]  aylcounts[a][sum over y]
@@ -34,18 +34,19 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
         probability = aylcounts[aValueIndex][yValueIndex] / np.sum(aylcounts[aValueIndex])
     else:
         for l in range(len(aylcounts[aValueIndex][yValueIndex])):
-            alSum = 0
+            alsum = 0
             lsum = 0
             for y in range(len(aylcounts[aValueIndex])):
-                alSum += aylcounts[aValueIndex][y][l]
+                alsum += aylcounts[aValueIndex][y][l]
                 for a in range(2):
                     lsum += aylcounts[a][y][l]
-            if (alSum == 0) or (lsum == 0):
+            total = np.sum(aylcounts)
+            if (alsum == 0):
                 print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
                 probability = None
                 break
             else:
-                probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / alSum
+                probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / (alsum * total)
     if (probability==0):
         print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
         probability = None
