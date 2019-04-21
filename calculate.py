@@ -191,27 +191,27 @@ def count(data, indexOfA, indexOfY, indexOfL=None):
         aylcounts = np.zeros((len(values), len(values)))
     else:
         aylcounts = np.zeros((len(values), len(values), len(values)))
-    for i in range(len(data[0])): # for all elements in the data
+    for i in range(len(data)): # for all elements in the data
         if indexOfL==None:
             for a in range(len(values)):
                 for y in range(len(values)):
-                    if ((data[indexOfA][i] == values[a]) and (data[indexOfY][i] == values[y])):
+                    if ((data[i][indexOfA] == values[a]) and (data[i][indexOfY] == values[y])):
                         aylcounts[a][y] += 1
         else:
             for a in range(len(values)):
                 for y in range(len(values)):
                     for l in range(len(values)):
-                        if ((data[indexOfA][i] == values[a]) and (data[indexOfY][i] == values[y]) and (data[indexOfL][i] == values[l])):
+                        if ((data[i][indexOfA] == values[a]) and (data[i][indexOfY] == values[y]) and (data[i][indexOfL] == values[l])):
                             aylcounts[a][y][l] += 1
     for a in range(len(aylcounts)):
         for y in range(len(aylcounts[a])):
             if indexOfL==None:
                 if aylcounts[a][y]==0:
-                    print("Positivity violated for A="+str(a)+", Y="+str(y)+". Beware when calculating.")
+                    print("Positivity violated for A="+str(a)+", Y="+str(y))
             else:
                 for l in range(len(aylcounts[a][y])):
                     if aylcounts[a][y][l]==0:
-                        print("Positivity violated for A="+str(a)+", Y="+str(y)+", L="+str(l)+". Beware when calculating.")
+                        print("Positivity violated for A="+str(a)+", Y="+str(y)+", L="+str(l))
     return aylcounts
 
 def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
