@@ -82,20 +82,32 @@ if __name__== '__main__':
     print("\nPop_up_window -> URL_of_anchor, conditioning on Phishing")
     results = run_calculations(results,"P", "A", "Ph")
 
+    print("\nURL_of_anchor -> Pop_up_window, conditioning on Phishing")
+    results = run_calculations(results,"A", "P", "Ph")
+
     print("\nPop_up_window -> Request_URL, conditioning on Phishing")
     results = run_calculations(results,"P", "R", "Ph")
 
+    print("\nRequest_URL -> Pop_up_window, conditioning on Phishing")
+    results = run_calculations(results,"R", "P", "Ph")
+
     print("\nSFH -> URL_of_anchor, conditioning on Phishing")
-    results = run_calculations(results,"Ph", "H", "Ph")
+    results = run_calculations(results,"S", "A", "Ph")
+
+    print("\nURL_of_anchor -> SFH, conditioning on Phishing")
+    results = run_calculations(results,"A", "S", "Ph")
 
     print("\nSFH -> Request_URL, conditioning on Phishing")
     results = run_calculations(results,"S", "R", "Ph")
+
+    print("\nRequest_URL -> SFH, conditioning on Phishing")
+    results = run_calculations(results,"R", "S", "Ph")
 
     print("\nAge_of_domain -> Web_traffic, conditioning on Phishing")
     results = run_calculations(results,"D", "T", "Ph")
 
 
-    myFile = open('results.csv', 'w')
+    myFile = open('test.csv', 'w')
     with myFile:
         writer = csv.writer(myFile)
         writer.writerows(results)
