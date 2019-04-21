@@ -8,15 +8,15 @@ import numpy as np
 def cond_prob(aValueIndex, yValueIndex, aylcounts):
     '''
     Calculates the P(Y=y|A=a) when P(Y=y|A=a, L_i=l_i, ..., L_n=l_n)
-
-    Parameters
-    ----------
     P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
             = \sum_L P(Y=y,A=a,L=l)*         P(L=l)/                                                                                 P(A=a,L=l)
-                        aylcounts[a][y][l]  aylcounts[sum over a][sum over y][l]/aylcounts[sum over a][sum over y][sum over l]      aylcounts[a][sum over y][l]
+                    aylcounts[a][y][l]      aylcounts[sum over a][sum over y][l]/aylcounts[sum over a][sum over y][sum over l]      aylcounts[a][sum over y][l]
     if no L:
                = P(Y=y,A=a) /   P(A=a)
                aylcounts[a][y]  aylcounts[a][sum over y]
+
+    Parameters
+    ----------
     aValueIndex : int
         the index of aylcounts where a = value you're looking for (same as value of A since A is binary)
     yValueIndex : int
@@ -42,13 +42,13 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
                     lsum += aylcounts[a][y][l]
             total = np.sum(aylcounts)
             if (alsum == 0):
-                print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
+                #print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
                 probability = None
                 break
             else:
                 probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / (alsum * total)
     if (probability==0):
-        print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
+        #print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
         probability = None
     return probability
 
@@ -203,6 +203,14 @@ def count(data, indexOfA, indexOfY, indexOfL=None):
                     for l in range(len(values)):
                         if ((data[indexOfA][i] == values[a]) and (data[indexOfY][i] == values[y]) and (data[indexOfL][i] == values[l])):
                             aylcounts[a][y][l] += 1
+    for a in range(len(aylcounts)):
+        for y in range(len(aylcounts[a])):
+            if indexOfL==None:
+                if aylcounts[a][y]==0:
+                    print("Positivity violated for A="+str(a)+", Y="+str(y)". Beware when calculating.")
+            else:
+                for l in range(len(aylcounts[a][y])):
+                    print("Positivity violated for A="+str(a)+", Y="+str(y)", L="+str(l)+". Beware when calculating.")
     return aylcounts
 
 def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
