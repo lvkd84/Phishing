@@ -44,6 +44,8 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
                 for a in range(2):
                     lsum += aylcounts[a][y][l]
             probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / alSum
+    if (probability==0):
+        raise ValueError("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)")")
     return probability
 
 
@@ -264,6 +266,7 @@ def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
     print("Risk difference:", r_difference)
     print("Risk ratio:", r_ratio)
     print("Odds ratio:", o_ratio)
+    return r_difference, r_ratio, o_ratio
 
 if __name__== '__main__':
     test_data = [[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1], [0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,], [0,0,0,0,0,1,1,1,0,1,0,1,0,0,0,1,1,1,1,1]]
@@ -276,7 +279,7 @@ if __name__== '__main__':
     print("counts: A=1|Y=0, A=1|Y=1")
     print(aycounts)
     print("Y=1,A=1/A=1 - Y=1,A=0/A=0")
-
+    print(calculate_ass_effects(test_data, 0, 1))
     aylcounts = count(test_data, 0, 1, 2)
     print("A0Y0L0, A0Y0L1")
     print("A0Y1L0, A0Y1L1")
@@ -284,6 +287,5 @@ if __name__== '__main__':
     print("A1Y1L0, A1Y1L1")
     print(aylcounts)
     print("put l in")
-    print(calculate_ass_effects(test_data, 0, 1))
     print(calculate_ass_effects(test_data, 0, 1, 2))
 
