@@ -207,10 +207,10 @@ def count(data, indexOfA, indexOfY, indexOfL=None):
         for y in range(len(aylcounts[a])):
             if indexOfL==None:
                 if aylcounts[a][y]==0:
-                    print("Positivity violated for A="+str(a)+", Y="+str(y)". Beware when calculating.")
+                    print("Positivity violated for A="+str(a)+", Y="+str(y)+". Beware when calculating.")
             else:
                 for l in range(len(aylcounts[a][y])):
-                    print("Positivity violated for A="+str(a)+", Y="+str(y)", L="+str(l)+". Beware when calculating.")
+                    print("Positivity violated for A="+str(a)+", Y="+str(y)+", L="+str(l)+". Beware when calculating.")
     return aylcounts
 
 def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
