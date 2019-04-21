@@ -40,14 +40,14 @@ if __name__== '__main__':
     df2=(df2.replace(-1,0)).values
 
 
-    p1_index={"S":0, "P":1, "H":2, "R":3, "A":4, "T":5, "L":6, "D":7, "I":8, "Ph":9}
-    p2_index = {"I":0, "L":1, "H":7, "R":12, "A":13, "S":15, "P":21, "D":23, "T":25, "Ph":30}
+    p1_index={"S":0, "P":1, "F":2, "R":3, "A":4, "T":5, "L":6, "D":7, "I":8, "Ph":9}
+    p2_index = {"I":0, "L":1, "F":7, "R":12, "A":13, "S":15, "P":21, "D":23, "T":25, "Ph":30}
 
 
     results = [["Dataset", "A", "Y", "L", "r_difference", "r_ratio", "o_ratio"]]
 
     print("Phishing -> SSL_final_state")
-    results = run_calculations(results,"Ph", "H")
+    results = run_calculations(results,"Ph", "F")
 
     print("\nPhishing -> having_IP_address")
     results = run_calculations(results,"Ph", "I")
@@ -74,7 +74,7 @@ if __name__== '__main__':
     results = run_calculations(results,"Ph", "T")
 
     print("\nPhishing -> SSL_final_state")
-    results = run_calculations(results,"Ph", "H")
+    results = run_calculations(results,"Ph", "F")
 
     print("\nhaving_IP_address -> URL_length, conditioning on Phishing")
     results = run_calculations(results,"I", "L", "Ph")
