@@ -12,25 +12,22 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
     Parameters
     ----------
     P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
-            = \sum_L P(Y=y,A=a,L=l,...,L=l)*P(L=l,...,L=l)/P(A=a,L=l,...,L=l)
-                        aylcounts[a][y][i]      lcounts[i]      aylcounts[a][sum over y][i]
+            = \sum_L P(Y=y,A=a,L=l,...,L=l)*P(L=l)/                                   P(A=a,L=l)
+                        aylcounts[a][y][l]  aylcounts[sum over a][sum over y][l]      aylcounts[a][sum over y][l]
     if no L:
-               = P(Y=y,A=a) / P(A=a)
-               aylcounts[a][y] aylcounts[a][sum over y]
+               = P(Y=y,A=a) /   P(A=a)
+               aylcounts[a][y]  aylcounts[a][sum over y]
     aValueIndex : int
-        the index of aylcounts where a = value you're looking for
+        the index of aylcounts where a = value you're looking for (same as value of A since A is binary)
     yValueIndex : int
-        the index of aylcounts[a] where y = value you're looking for
+        the index of aylcounts[a] where y = value you're looking for (same as value of Y since Y is binary)
     aylcounts : int array
-        it's complicated but each value [a][y][i] is where you're on the ith combo of L
-        and it's the sum of where [a][y] are their values
-    lcounts : int array
-        same as aylcounts but no a and y
+        aylcounts[a][y][l] is the number of instances where A==a, Y==y, and L==l
     
     Returns
     -------
     float
-        P(Y=y|A=a)
+        P(Y=yValueIndex|A=aValueIndex)
     '''
     probability = 0
     if np.shape(aylcounts)==(2,2):
@@ -43,9 +40,15 @@ def cond_prob(aValueIndex, yValueIndex, aylcounts):
                 alSum += aylcounts[aValueIndex][y][l]
                 for a in range(2):
                     lsum += aylcounts[a][y][l]
-            probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / alSum
+            if (alSum == 0) or (lsum == 0):
+                print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
+                probability = None
+                break
+            else:
+                probability += aylcounts[aValueIndex][yValueIndex][l] * lsum / alSum
     if (probability==0):
-        raise ValueError("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
+        print("Positivity was violated when calculating P(Y="+str(yValueIndex)+"|A="+str(aValueIndex)+")")
+        probability = None
     return probability
 
 
@@ -64,24 +67,12 @@ def risk_difference(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
 
     indexOfY : int
         the index of the effect's values in the data. data[indexOfY][j] represents element j's value of Y.
-    
-    aValues : int array
-        the values to differ A over. Must hold 2 values. The difference will be for aValues[1]-aValues[0]. Optional, default is [0, 1]
 
-    yValues : int array
-        the value that Y will be calculated over. Must hold one value. Optional, default is [1]
+    aylcounts : int array
+        aylcounts[a][y][l] is the number of instances where A==a, Y==y, and L==l
     
     indexOfL : int 
         an array holding the indices of different L's values in the data. Optional.
-
-    lValues : int array
-        the values of L to count for
-
-    aylcounts : int array
-        each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
-
-    lcounts : int array
-        same as aylcounts but no a and y
 
     Returns
     -------
@@ -90,7 +81,11 @@ def risk_difference(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
     '''
     if len(aylcounts)==0:
         aylcounts = count(data, indexOfA, indexOfY, indexOfL)
-    return cond_prob(1, 1, aylcounts) - cond_prob(0, 1, aylcounts)
+    a1 = cond_prob(1, 1, aylcounts)
+    a0 = cond_prob(0, 1, aylcounts)
+    if (a1==None) or (a0==None):
+        return None
+    return a1 - a0
 
 
 def risk_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL = None):
@@ -108,24 +103,12 @@ def risk_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL = None):
 
     indexOfY : int
         the index of the effect's values in the data. data[indexOfY][j] represents element j's value of Y.
-    
-    aValues : int array
-        the values to differ A over. Must hold 2 values. The difference will be for aValues[1]-aValues[0]. Optional, default is [0, 1]
-
-    yValues : int array
-        the value that Y will be calculated over. Must hold one value. Optional, default is [1]
-
-    indexOfL : int 
-        an array holding the indices of different L's values in the data. Optional.
-
-    lValues : int array
-        the values of L to count for
 
     aylcounts : int array
-        each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
-
-    lcounts : int array
-        same as aylcounts but no a and y
+        aylcounts[a][y][l] is the number of instances where A==a, Y==y, and L==l
+    
+    indexOfL : int 
+        an array holding the indices of different L's values in the data. Optional.
 
     Returns
     -------
@@ -134,7 +117,11 @@ def risk_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL = None):
     '''
     if (len(aylcounts)==0):
         aylcounts = count(data, indexOfA, indexOfY, indexOfL)
-    return cond_prob(1, 1, aylcounts) / cond_prob(0, 1, aylcounts)
+    a1 = cond_prob(1, 1, aylcounts)
+    a0 = cond_prob(0, 1, aylcounts)
+    if (a1==None) or (a0==None):
+        return None
+    return a1 / a0
 
 def odds_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
     '''
@@ -151,24 +138,12 @@ def odds_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
 
     indexOfY : int
         the index of the effect's values in the data. data[indexOfY][j] represents element j's value of Y.
-    
-    aValues : int array
-        the values to differ A over. Must hold 2 values. The difference will be for aValues[1]-aValues[0]. Optional, default is [0, 1]
-
-    yValues : int array
-        the value that Y will be calculated over. Must hold one value. Optional, default is [1]
-
-    indexOfL : int 
-        an array holding the indices of different L's values in the data. Optional.
-    
-    lValues : int array
-        the values of L to count for
 
     aylcounts : int array
-        each value [a][y][i] is where you're on the ith combo of L and it's the sum of where [a][y] are their values
-
-    lcounts : int array
-        same as aylcounts but no a and y
+        aylcounts[a][y][l] is the number of instances where A==a, Y==y, and L==l
+    
+    indexOfL : int 
+        an array holding the indices of different L's values in the data. Optional.
 
     Returns
     -------
@@ -177,7 +152,13 @@ def odds_ratio(data, indexOfA, indexOfY, aylcounts = [], indexOfL=None):
     '''
     if (len(aylcounts)==0):
         aylcounts = count(data, indexOfA, indexOfY, indexOfL)
-    return cond_prob(1, 1, aylcounts)/cond_prob(1, 0, aylcounts) / (cond_prob(0, 1, aylcounts)/cond_prob(0, 0, aylcounts))
+    a1y1 = cond_prob(1, 1, aylcounts)
+    a0y1 = cond_prob(0, 1, aylcounts)
+    a1y0 = cond_prob(1, 0, aylcounts)
+    a0y0 = cond_prob(0, 0, aylcounts)
+    if (a1y1==None) or (a0y1==None) or (a1y0==None) or (a0y0==None):
+        return None
+    return a1y1/a1y0 / (a0y1/a0y0)
 
 
 def count(data, indexOfA, indexOfY, indexOfL=None):
@@ -195,24 +176,13 @@ def count(data, indexOfA, indexOfY, indexOfL=None):
     indexOfY : int
         the index of Y in the data
 
-    aValues : int array
-        the values of A to count for
-
-    yValues : int array
-        the values of Y--must be every discrete value that Y can hold or math will turn out wrong
-        
-    lValues : int array
-        the values of L to count for
-
     indexOfL : int array
         the indices of L to condition on in the data
 
     Returns
     -------
     int array
-        the counts over the combinations of L for when A=aValues and Y=yValues
-    int array
-        the counts over the combinations of L
+        aylcounts[a][y][l]: the number of instances where A==a, Y==y, and L==l
     '''
     values = [0, 1]
     aylcounts = []
@@ -236,7 +206,7 @@ def count(data, indexOfA, indexOfY, indexOfL=None):
 
 def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
     '''
-    Words
+    Calculates, prints, and returns the associational effects of A on Y given L
 
     Parameters
     ----------
@@ -248,12 +218,6 @@ def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
 
     indexOfY : int
         the index of Y in the data
-
-    aValues : int array
-        the values of A to count for (must have 2 items)
-
-    yValues : int array
-        the values of Y to count for (must have 2 items)
         
     indexOfL : int
         the indices of L in the data
