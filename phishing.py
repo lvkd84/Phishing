@@ -107,8 +107,7 @@ if __name__== '__main__':
     results = run_calculations(results,"D", "T", "Ph")
 
 
-    myFile = open('test.csv', 'w')
+    myFile = open('results.csv', 'w')
     with myFile:
         writer = csv.writer(myFile)
         writer.writerows(results)
-
