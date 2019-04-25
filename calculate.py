@@ -1,14 +1,9 @@
-#import pandas as pd
 import numpy as np
-
-#load_data1 = arff.loadarff('Phishing.arff')
-#df1 = pd.DataFrame(load_data[0]).astype(int)
-
 
 def cond_prob(aValueIndex, yValueIndex, aylcounts):
     '''
-    Calculates the P(Y=y|A=a) when P(Y=y|A=a, L_i=l_i, ..., L_n=l_n)
-    P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l, ..., L=l)*P(L=l, ..., L=l)
+    Calculates the P(Y=y|A=a) when P(Y=y|A=a, L=l) using standardization
+    P(Y=y|A=a) = \sum_L P(Y=y|A=a, L=l)*P(L=l)
             = \sum_L P(Y=y,A=a,L=l)*         P(L=l)/                                                                                 P(A=a,L=l)
                     aylcounts[a][y][l]      aylcounts[sum over a][sum over y][l]/aylcounts[sum over a][sum over y][sum over l]      aylcounts[a][sum over y][l]
     if no L:
@@ -241,25 +236,4 @@ def calculate_ass_effects(data, indexOfA, indexOfY, indexOfL=None):
     print("Risk ratio:", r_ratio)
     print("Odds ratio:", o_ratio)
     return r_difference, r_ratio, o_ratio
-
-if __name__== '__main__':
-    test_data = [[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1], [0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,], [0,0,0,0,0,1,1,1,0,1,0,1,0,0,0,1,1,1,1,1]]
-    #A=0, Y=0 = 1
-    #A=0, Y=1 = 3
-    #A=1, Y=0 = 1
-    #A=1, Y=1 = 2
-    aycounts = count(test_data, 0, 1)
-    print("counts: A=0|Y=0, A=0|Y=1")
-    print("counts: A=1|Y=0, A=1|Y=1")
-    print(aycounts)
-    print("Y=1,A=1/A=1 - Y=1,A=0/A=0")
-    print(calculate_ass_effects(test_data, 0, 1))
-    aylcounts = count(test_data, 0, 1, 2)
-    print("A0Y0L0, A0Y0L1")
-    print("A0Y1L0, A0Y1L1")
-    print("A1Y0L0, A1Y0L1")
-    print("A1Y1L0, A1Y1L1")
-    print(aylcounts)
-    print("put l in")
-    print(calculate_ass_effects(test_data, 0, 1, 2))
 
