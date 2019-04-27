@@ -69,18 +69,6 @@ def run_all_graph(df1, df2, p1_index, p2_index):
     print("\nRequest_URL -> Pop_up_window, conditioning on Phishing")
     results.append(run_calculations(df1, df2, p1_index, p2_index,"R", "W", "P"))
 
-    print("\nSFH -> URL_of_anchor, conditioning on Phishing")
-    results.append(run_calculations(df1, df2, p1_index, p2_index,"S", "A", "P"))
-
-    print("\nURL_of_anchor -> SFH, conditioning on Phishing")
-    results.append(run_calculations(df1, df2, p1_index, p2_index,"A", "S", "P"))
-
-    print("\nSFH -> Request_URL, conditioning on Phishing")
-    results.append(run_calculations(df1, df2, p1_index, p2_index,"S", "R", "P"))
-
-    print("\nRequest_URL -> SFH, conditioning on Phishing")
-    results.append(run_calculations(df1, df2, p1_index, p2_index,"R", "S", "P"))
-
     print("\nAge_of_domain -> Web_traffic, conditioning on Phishing")
     results.append(run_calculations(df1, df2, p1_index, p2_index,"D", "T", "P"))
 
