@@ -54,9 +54,6 @@ def run_all_graph(df1, df2, p1_index, p2_index):
     print("\nPhishing -> Web_traffic")
     results.append(run_calculations(df1, df2, p1_index, p2_index,"P", "T"))
 
-    print("\nPhishing -> SSL_final_state")
-    results.append(run_calculations(df1, df2, p1_index, p2_index,"P", "F"))
-
     print("\nhaving_IP_address -> URL_length, conditioning on Phishing")
     results.append(run_calculations(df1, df2, p1_index, p2_index,"I", "L", "P"))
 
@@ -86,6 +83,9 @@ def run_all_graph(df1, df2, p1_index, p2_index):
 
     print("\nAge_of_domain -> Web_traffic, conditioning on Phishing")
     results.append(run_calculations(df1, df2, p1_index, p2_index,"D", "T", "P"))
+
+    print("\nWeb_traffic -> Age_of_domain, conditioning on Phishing")
+    results.append(run_calculations(df1, df2, p1_index, p2_index,"T", "D", "P"))
 
 
     myFile = open('results.csv', 'w')
